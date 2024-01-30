@@ -1,0 +1,111 @@
+# CI pipeline deploys the poc Infrastructure for dv and sy environments
+
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+    - Deployments/ApplicationInfrastructure/Project-storageAccount/*
+
+
+name:
+  $(Build.SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: TERRAFORM_WORKING_DIR
+    value: '$(System.DefaultWorkingDirectory)/Deployments/ApplicationInfrastructure/project-storageaccount'
+  - name: PROJECT_NAME
+    value: 'project-storageaccount'
+  - name: TERRAFORM_SERVICE_CONNECTION_DEV # spn for development service sub
+    value: '' 
+  - name: TERRAFORM_SERVICE_CONNECTION_SY   # spn for app service sub
+    value: ''
+  - name: TERRAFORM_SERVICE_CONNECTION_ST   # spn for app service sub
+    value: ''
+  - name: TERRAFORM_SERVICE_CONNECTION_PR   # spn for app service sub
+    value: ''
+  - name: REMOTE_STATE_SERVICE_CONNECTION   # spn name where terraform remote backend storage account is created
+    value: ''
+  - name: REMOTE_STATE_RESOURCE_GROUP
+    value: 'sb-poc-terraform-rg'
+  - name: REMOTE_STATE_STORAGE_NAME # name of the storage account where tf state files are stored
+    value: 'cloudopstfpoc'  
+  # create a container before running pipeline
+  - name: REMOTE_STATE_CONTAINER_NAME
+    value: 'project-storageaccount'
+
+
+stages:
+
+  - template: /.azdo/stages/validate.yaml
+    parameters:
+      environmentServiceNameDv: '${{ variables.TERRAFORM_SERVICE_CONNECTION_DEV }}' # varies on environment
+      environmentServiceNameSy: '${{ variables.TERRAFORM_SERVICE_CONNECTION_SY }}'
+      environmentServiceNameSt: '${{ variables.TERRAFORM_SERVICE_CONNECTION_ST }}'
+      environmentServiceNamePr: '${{ variables.TERRAFORM_SERVICE_CONNECTION_PR }}'
+      remoteStateContainerName: '${{ variables.REMOTE_STATE_CONTAINER_NAME }}'
+      remoteStateResourceGroup: '${{ variables.REMOTE_STATE_RESOURCE_GROUP }}'
+      remoteStateServiceConnection: '${{ variables.REMOTE_STATE_SERVICE_CONNECTION }}'
+      remoteStateStorageName: '${{ variables.REMOTE_STATE_STORAGE_NAME }}'
+      terraformWorkingDirectory: '${{ variables.TERRAFORM_WORKING_DIR }}'
+
+  # deploy 'dev' infrastructure
+  - template: /.azdo/stages/lower-Environment.yaml
+    parameters:
+      environmentName: 'dev' # varies on environment
+      environmentServiceName: '${{ variables.TERRAFORM_SERVICE_CONNECTION_DEV }}' # varies on environment
+      projectName: '${{ variables.PROJECT_NAME }}' 
+      remoteStateContainerName: '${{ variables.REMOTE_STATE_CONTAINER_NAME }}'
+      remoteStateResourceGroup: '${{ variables.REMOTE_STATE_RESOURCE_GROUP }}'
+      remoteStateServiceConnection: '${{ variables.REMOTE_STATE_SERVICE_CONNECTION }}'
+      remoteStateStorageName: '${{ variables.REMOTE_STATE_STORAGE_NAME }}'
+      terraformWorkingDirectory: '${{ variables.TERRAFORM_WORKING_DIR }}'
+      terraformCommandOptions: >
+            -var-file="environments/dv.tfvars"
+    
+  - template: /.azdo/stages/Upper-Environment.yaml
+    parameters:
+      dependsOnEnvironment: 'dev' # depends on environment
+      environmentName: 'sy' # varies on environment
+      environmentServiceName: '${{ variables.TERRAFORM_SERVICE_CONNECTION_SY }}' # varies on environment
+      projectName: '${{ variables.PROJECT_NAME }}' 
+      remoteStateContainerName: '${{ variables.REMOTE_STATE_CONTAINER_NAME }}'
+      remoteStateResourceGroup: '${{ variables.REMOTE_STATE_RESOURCE_GROUP }}'
+      remoteStateServiceConnection: '${{ variables.REMOTE_STATE_SERVICE_CONNECTION }}'
+      remoteStateStorageName: '${{ variables.REMOTE_STATE_STORAGE_NAME }}'
+      terraformWorkingDirectory: '${{ variables.TERRAFORM_WORKING_DIR }}'
+      terraformCommandOptions: > # varies on environment
+            -var-file="environments/sy.tfvars"
+
+  - template: /.azdo/stages/Upper-Environment.yaml
+    parameters:
+      dependsOnEnvironment: 'sy' # depends on environment
+      environmentName: 'st' # varies on environment
+      environmentServiceName: '${{ variables.TERRAFORM_SERVICE_CONNECTION_ST }}' # varies on environment
+      projectName: '${{ variables.PROJECT_NAME }}' 
+      remoteStateContainerName: '${{ variables.REMOTE_STATE_CONTAINER_NAME }}'
+      remoteStateResourceGroup: '${{ variables.REMOTE_STATE_RESOURCE_GROUP }}'
+      remoteStateServiceConnection: '${{ variables.REMOTE_STATE_SERVICE_CONNECTION }}'
+      remoteStateStorageName: '${{ variables.REMOTE_STATE_STORAGE_NAME }}'
+      terraformWorkingDirectory: '${{ variables.TERRAFORM_WORKING_DIR }}'
+      terraformCommandOptions: > # varies on environment
+            -var-file="environments/st.tfvars"
+
+  - template: /.azdo/stages/Upper-Environment.yaml
+    parameters:
+      dependsOnEnvironment: 'st' # depends on environment
+      environmentName: 'pr' # varies on environment
+      environmentServiceName: '${{ variables.TERRAFORM_SERVICE_CONNECTION_PR }}' # varies on environment
+      projectName: '${{ variables.PROJECT_NAME }}' 
+      remoteStateContainerName: '${{ variables.REMOTE_STATE_CONTAINER_NAME }}'
+      remoteStateResourceGroup: '${{ variables.REMOTE_STATE_RESOURCE_GROUP }}'
+      remoteStateServiceConnection: '${{ variables.REMOTE_STATE_SERVICE_CONNECTION }}'
+      remoteStateStorageName: '${{ variables.REMOTE_STATE_STORAGE_NAME }}'
+      terraformWorkingDirectory: '${{ variables.TERRAFORM_WORKING_DIR }}'
+      terraformCommandOptions: > # varies on environment
+            -var-file="environments/pr.tfvars"

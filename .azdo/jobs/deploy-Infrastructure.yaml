@@ -1,0 +1,28 @@
+parameters:
+  environmentServiceName: ''
+  remoteStateContainerName: ''
+  remoteStateFileName: ''
+  remoteStateResourceGroup: ''
+  remoteStateServiceConnection: ''
+  remoteStateStorageName: ''
+  terraformCommandOptions: ''
+  terraformWorkingDirectory: ''
+
+jobs:
+  - job: deploy_infrastructure
+    dependsOn: pending_approval
+    displayName: 'Deploy Terraform Infrastructure'
+    timeoutInMinutes: 0
+    pool:
+      name: 'terraform'
+    steps: 
+      - template: /.azdo/steps/deploy-terraform.yaml
+        parameters:
+          environmentServiceName: '${{ parameters.environmentServiceName }}'
+          remoteStateContainerName: '${{ parameters.remoteStateContainerName }}'
+          remoteStateFileName: '${{ parameters.remoteStateFileName }}'
+          remoteStateResourceGroup: '${{ parameters.remoteStateResourceGroup }}'
+          remoteStateServiceConnection: '${{ parameters.remoteStateServiceConnection }}'
+          remoteStateStorageName: '${{ parameters.remoteStateStorageName }}'
+          terraformCommandOptions: '${{ parameters.terraformCommandOptions }}'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'

@@ -1,0 +1,129 @@
+parameters:
+  environmentServiceNameDv: ''
+  environmentServiceNameSy: ''
+  environmentServiceNameSt: ''
+  environmentServiceNamePr: ''
+  remoteStateContainerName: ''
+  remoteStateResourceGroup: ''
+  remoteStateServiceConnection: ''
+  remoteStateStorageName: ''
+  terraformWorkingDirectory: ''
+
+jobs:
+  - job: pre_plan_results
+    displayName: 'Terraform Plan Results'
+    timeoutInMinutes: 0
+    pool:
+      name: 'terraform'
+    steps:
+      - task: TerraformCLI@0
+        displayName: 'Install Latest Terraform Version'
+        inputs:
+          terraformVersion: 'latest'
+
+# Terraform format check
+      - task: TerraformCLI@0
+        displayName: 'Terraform Format'
+        inputs:
+          command: 'fmt'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+
+  # DV validation
+      - task: TerraformCLI@0
+        displayName: 'Terraform Init Dv'
+        inputs:
+          command: init
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          backendType: 'azurerm'
+          backendServiceArm: '${{ parameters.remoteStateServiceConnection }}'
+          backendAzureRmResourceGroupName: '${{ parameters.remoteStateResourceGroup }}'
+          backendAzureRmStorageAccountName: '${{ parameters.remoteStateStorageName }}'
+          backendAzureRmContainerName: '${{ parameters.remoteStateContainerName }}'
+          backendAzureRmKey: 'dv.tfstate'
+          commandOptions: '-reconfigure'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Init SY'
+        inputs:
+          command: init
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          backendType: 'azurerm'
+          backendServiceArm: '${{ parameters.remoteStateServiceConnection }}'
+          backendAzureRmResourceGroupName: '${{ parameters.remoteStateResourceGroup }}'
+          backendAzureRmStorageAccountName: '${{ parameters.remoteStateStorageName }}'
+          backendAzureRmContainerName: '${{ parameters.remoteStateContainerName }}'
+          backendAzureRmKey: 'sy.tfstate'
+          commandOptions: '-reconfigure'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Init ST'
+        inputs:
+          command: init
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          backendType: 'azurerm'
+          backendServiceArm: '${{ parameters.remoteStateServiceConnection }}'
+          backendAzureRmResourceGroupName: '${{ parameters.remoteStateResourceGroup }}'
+          backendAzureRmStorageAccountName: '${{ parameters.remoteStateStorageName }}'
+          backendAzureRmContainerName: '${{ parameters.remoteStateContainerName }}'
+          backendAzureRmKey: 'st.tfstate'
+          commandOptions: '-reconfigure'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Init PR'
+        inputs:
+          command: init
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          backendType: 'azurerm'
+          backendServiceArm: '${{ parameters.remoteStateServiceConnection }}'
+          backendAzureRmResourceGroupName: '${{ parameters.remoteStateResourceGroup }}'
+          backendAzureRmStorageAccountName: '${{ parameters.remoteStateStorageName }}'
+          backendAzureRmContainerName: '${{ parameters.remoteStateContainerName }}'
+          backendAzureRmKey: 'pr.tfstate'
+          commandOptions: '-reconfigure'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform validate'
+        inputs:
+          command: 'validate'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Plan Results Dv'
+        inputs:
+          command: 'plan'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          environmentServiceName: '${{ parameters.environmentServiceNameDv }}'
+          publishPlanResults: 'Terraform-Plan-DV'
+          commandOptions: >
+            -var-file="environments/dv.tfvars"
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Plan Results SY'
+        inputs:
+          command: 'plan'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          environmentServiceName: '${{ parameters.environmentServiceNameSy }}'
+          publishPlanResults: 'Terraform-Plan-SY'
+          commandOptions: >
+            -var-file="environments/sy.tfvars"
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Plan Results-ST'
+        inputs:
+          command: 'plan'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          environmentServiceName: '${{ parameters.environmentServiceNameSt }}'
+          publishPlanResults: 'Terraform-Plan-ST'
+          commandOptions: >
+            -var-file="environments/st.tfvars"
+
+
+      - task: TerraformCLI@0
+        displayName: 'Terraform Plan Results PR'
+        inputs:
+          command: 'plan'
+          workingDirectory: '${{ parameters.terraformWorkingDirectory }}'
+          environmentServiceName: '${{ parameters.environmentServiceNamePr }}'
+          publishPlanResults: 'Terraform-Plan-PR'
+          commandOptions: >
+            -var-file="environments/pr.tfvars"

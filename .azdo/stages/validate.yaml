@@ -1,0 +1,28 @@
+# Re-usable stage template to deploy terraform Infrastructure on dv environments
+
+parameters:
+  environmentServiceNameDv: ''
+  environmentServiceNameSy: 
+  environmentServiceNameSt: ''
+  environmentServiceNamePr: ''
+  remoteStateContainerName: ''
+  remoteStateResourceGroup: ''
+  remoteStateServiceConnection: ''
+  remoteStateStorageName: ''
+  terraformWorkingDirectory: ''
+
+stages:
+  - stage: Validate_infrastructure
+    displayName: 'Validate infrastructure'
+    jobs:            
+      - template: /.azdo/jobs/pre-approve-plan.yaml
+        parameters: 
+          environmentServiceNameDv: '${{ parameters.environmentServiceNameDv }}'
+          environmentServiceNameSy: '${{ parameters.environmentServiceNameSy }}'
+          environmentServiceNameSt: '${{ parameters.environmentServiceNameSt }}'
+          environmentServiceNamePr: '${{ parameters.environmentServiceNamePr }}'
+          remoteStateContainerName: '${{ parameters.remoteStateContainerName }}'
+          remoteStateResourceGroup: '${{ parameters.remoteStateResourceGroup }}'
+          remoteStateServiceConnection: '${{ parameters.remoteStateServiceConnection }}'
+          remoteStateStorageName: '${{ parameters.remoteStateStorageName }}'
+          terraformWorkingDirectory: '${{ parameters.terraformWorkingDirectory }}'

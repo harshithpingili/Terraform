@@ -1,0 +1,66 @@
+# Deploys the terraform infrastructure
+# Re-usable template for dv environments
+# Note that Terraform remote state requires input variables to the 
+# initialization step specifying the configuration of the remote azurerm backend.
+# remote state files are stored in storage account
+
+
+parameters:
+  environmentServiceName: ''
+  remoteStateContainerName: ''
+  remoteStateFileName: ''
+  remoteStateResourceGroup: ''
+  remoteStateServiceConnection: ''
+  remoteStateStorageName: ''
+  terraformCommandOptions: ''
+  workingDirectory: ''
+
+steps:
+  - task: TerraformCLI@0
+    displayName: 'Install Latest Terraform Version'
+    inputs:
+      terraformVersion: 'latest'
+
+  - task: TerraformCLI@0
+    displayName: 'Terraform Init'
+    inputs:
+      command: init
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      backendType: 'azurerm'
+      backendServiceArm: '${{ parameters.remoteStateServiceConnection }}'
+      backendAzureRmResourceGroupName: '${{ parameters.remoteStateResourceGroup }}'
+      backendAzureRmStorageAccountName: '${{ parameters.remoteStateStorageName }}'
+      backendAzureRmContainerName: '${{ parameters.remoteStateContainerName }}'
+      backendAzureRmKey: '${{ parameters.remoteStateFileName }}'
+  
+  - task: TerraformCLI@0
+    displayName: 'Terraform Plan'
+    inputs:
+      command: 'plan'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      environmentServiceName: '${{ parameters.environmentServiceName }}' 
+      commandOptions: '${{ parameters.terraformCommandOptions }}'
+  
+
+  - task: TerraformCLI@0
+    displayName: 'Terraform Apply'
+    inputs:
+      command: 'apply'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      environmentServiceName: '${{ parameters.environmentServiceName }}'
+      commandOptions: '${{ parameters.terraformCommandOptions }}'
+
+  - task: TerraformCLI@0
+    displayName: 'Set Environment Variables from Terraform Outputs'
+    inputs:
+      command: 'output'
+      workingDirectory: '${{ parameters.workingDirectory }}'
+      environmentServiceName: '${{ parameters.environmentServiceName }}'
+
+  # - task: TerraformCLI@0
+  #   displayName: 'Terraform destroy'
+  #   inputs:
+  #     command: 'destroy'
+  #     workingDirectory: '${{ parameters.workingDirectory }}'
+  #     environmentServiceName: '${{ parameters.environmentServiceName }}'
+  #     commandOptions: '${{ parameters.terraformCommandOptions }}'
